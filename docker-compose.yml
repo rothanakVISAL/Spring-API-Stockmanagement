@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  oracle-db:
+    image: container-registry.oracle.com/database/free:23.6.0.0  # Specify the exact version
+    container_name: oracle-db
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PDB: "FREEPDB1"
+      ORACLE_PWD: "SecureP@ssw0rd123"
+      ENABLE_ARCHIVELOG: "true"
+      ENABLE_FORCE_LOGGING: "true"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+#      - ./scripts/startup:/opt/oracle/scripts/startup  # Optional
+#      - ./scripts/setup:/opt/oracle/scripts/setup      # Optional
+    healthcheck:
+      test: ["CMD", "sqlplus", "-S", "/ as sysdba", "EXIT"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - oracle-net
+
+volumes:
+  oracle-data:
+    driver: local
+
+networks:
+  oracle-net:
+    driver: bridge
