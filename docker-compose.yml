@@ -1,33 +1,41 @@
-version: '3.8'
+version: '3.8'  # Define the version of the Docker Compose file format
 
 services:
-  oracle-db:
-    image: container-registry.oracle.com/database/free:23.6.0.0  # Specify the exact version
-    container_name: oracle-db
+  oracle-db:  # Define the 'oracle-db' service, which will run the Oracle Database container
+    image: container-registry.oracle.com/database/free:23.6.0.0  # Specify the Oracle Database image and version
+    container_name: oracle-db  # Name the container instance (for easier management)
+
     ports:
-      - "1521:1521"
-    environment:
-      ORACLE_PDB: "FREEPDB1"
-      ORACLE_PWD: "SecureP@ssw0rd123"
-      ENABLE_ARCHIVELOG: "true"
-      ENABLE_FORCE_LOGGING: "true"
+      - "1521:1521"  # Map port 1521 from the container to the host, allowing external connections to the DB
+
+    environment:  # Set environment variables inside the container to configure Oracle DB
+      ORACLE_PDB: "FREEPDB1"  # Set the name of the pluggable database (PDB) to use (can be customized)
+      ORACLE_PWD: "SecureP@ssw0rd123"  # Set the password for the SYSDBA user (oracle admin user) , default username : system
+      ENABLE_ARCHIVELOG: "true"  # Enable archive logging (important for production DBs to support recovery)
+      ENABLE_FORCE_LOGGING: "true"  # Force logging for all operations (important for data consistency)
+
     volumes:
-      - oracle-data:/opt/oracle/oradata
-#      - ./scripts/startup:/opt/oracle/scripts/startup  # Optional
-#      - ./scripts/setup:/opt/oracle/scripts/setup      # Optional
-    healthcheck:
-      test: ["CMD", "sqlplus", "-S", "/ as sysdba", "EXIT"]
-      interval: 1m30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
+      - oracle-data:/opt/oracle/oradata  # Mount a volume to persist Oracle DB data to the host (for persistence)
+      # Optional: Uncomment below to run custom initialization/startup scripts (if needed)
+      # - ./scripts/startup:/opt/oracle/scripts/startup  # Path to scripts executed during container startup
+      # - ./scripts/setup:/opt/oracle/scripts/setup      # Path to DB setup scripts
+
+    healthcheck:  # Define a health check to monitor the DB container status
+      test: ["CMD", "sqlplus", "-S", "/ as sysdba", "SELECT 1 FROM DUAL;"]  # Use SQL query to verify DB availability
+      interval: 1m30s  # Check the health every 1 minute and 30 seconds
+      timeout: 10s  # Timeout after 10 seconds if no response is received
+      retries: 5  # Retry 5 times before marking the container as unhealthy
+      start_period: 40s  # Wait 40 seconds before starting the health check after the container starts
+
     networks:
-      - oracle-net
+      - oracle-net  # Connect the container to a specific network for communication with other services
 
+# Define the volumes used by the container
 volumes:
-  oracle-data:
-    driver: local
+  oracle-data:  # Persist Oracle database data to the host so that it survives container restarts
+    driver: local  # Use Docker's local driver to store the data locally on the host machine
 
+# Define the networks used by the container
 networks:
-  oracle-net:
-    driver: bridge
+  oracle-net:  # Create a custom network for this container (you can add more services to this network)
+    driver: bridge  # Use the bridge driver, which is the default for most Docker networks
